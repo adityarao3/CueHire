@@ -130,6 +130,9 @@ After the interview ends, we use hard browser redirects (`window.location.href`)
 - **Custom Rubrics** — Let recruiters define their own evaluation criteria
 - **Webhook Integration** — Notify recruiters via Slack/email when assessments are ready
 
+admin login email-admin@cuehire.com
+password-test1234
+
 ## 📝 License
 
 MIT
