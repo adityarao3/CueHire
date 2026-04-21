@@ -1,10 +1,15 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import Link from "next/link";
 import Image from "next/image";
 
 import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
 import { getFeedbackByInterviewId } from "@/lib/actions/general.action";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const InterviewCard = async ({
   interviewId,
@@ -32,9 +37,10 @@ const InterviewCard = async ({
       Screening: "bg-primary-200/40",
     }[normalizedType] || "bg-light-600";
 
-  const formattedDate = dayjs(
-    feedback?.createdAt || createdAt || Date.now()
-  ).format("MMM D, YYYY");
+  const formattedDate = dayjs
+    .utc(feedback?.createdAt || createdAt || Date.now())
+    .tz("Asia/Kolkata")
+    .format("MMM D, YYYY");
 
   return (
     <div className="card-border w-[360px] max-sm:w-full min-h-96">
