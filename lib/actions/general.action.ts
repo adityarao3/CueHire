@@ -25,6 +25,66 @@ export async function createFeedback(params: CreateFeedbackParams) {
 
     console.log("createFeedback: starting with", transcript.length, "messages for interview", interviewId);
 
+    // Calculate how much the user actually spoke
+    const userSpeech = transcript
+      .filter((m: any) => m.role === "user")
+      .map((m: any) => m.content)
+      .join(" ")
+      .trim();
+    const wordCount = userSpeech.split(/\s+/).filter((w: string) => w.length > 0).length;
+
+    console.log("createFeedback: candidate spoke", wordCount, "words");
+
+    // Tier 1: Almost no speech (< 5 words) → automatic 0
+    if (wordCount < 5) {
+      console.log("createFeedback: Candidate barely spoke, auto No Hire");
+      const feedback = {
+        interviewId, userId, totalScore: 0,
+        categoryScores: [
+          { category: "Communication Clarity", score: 0, comment: "Candidate did not provide enough speech to evaluate." },
+          { category: "Patience and Empathy", score: 0, comment: "Candidate did not provide enough speech to evaluate." },
+          { category: "Warmth and Approachability", score: 0, comment: "Candidate did not provide enough speech to evaluate." },
+          { category: "Ability to Simplify", score: 0, comment: "Candidate did not provide enough speech to evaluate." },
+          { category: "English Fluency", score: 0, comment: "Candidate did not provide enough speech to evaluate." },
+        ],
+        strengths: ["None observed — insufficient participation."],
+        areasForImprovement: ["Candidate did not participate meaningfully in the interview."],
+        finalAssessment: "The candidate spoke fewer than 5 words during the entire interview. No meaningful assessment can be made. This is an automatic rejection.",
+        recommendedAction: "No Hire",
+        evidenceQuotes: [{ category: "General", quote: userSpeech || "N/A", analysis: "Candidate provided virtually no speech to analyze." }],
+        createdAt: new Date().toISOString(),
+      };
+      let feedbackRef = feedbackId ? db.collection("feedback").doc(feedbackId) : db.collection("feedback").doc();
+      await feedbackRef.set(feedback);
+      console.log("createFeedback: saved auto-reject with id", feedbackRef.id);
+      return { success: true, feedbackId: feedbackRef.id };
+    }
+
+    // Tier 2: Very short speech (5-30 words) → auto low score, max 25
+    if (wordCount < 30) {
+      console.log("createFeedback: Very short conversation, auto low score");
+      const feedback = {
+        interviewId, userId, totalScore: Math.min(wordCount, 25),
+        categoryScores: [
+          { category: "Communication Clarity", score: Math.min(wordCount, 20), comment: `Candidate only spoke ${wordCount} words. Not enough data to assess communication skills properly.` },
+          { category: "Patience and Empathy", score: Math.min(wordCount, 20), comment: `Insufficient speech to evaluate patience or empathy. Only ${wordCount} words spoken.` },
+          { category: "Warmth and Approachability", score: Math.min(wordCount, 25), comment: `Too little interaction to assess warmth. Only ${wordCount} words spoken.` },
+          { category: "Ability to Simplify", score: 0, comment: `No teaching or explanation was attempted. Only ${wordCount} words spoken.` },
+          { category: "English Fluency", score: Math.min(wordCount, 30), comment: `Very limited speech sample (${wordCount} words). Cannot assess fluency reliably.` },
+        ],
+        strengths: ["None observed — conversation was too short to identify strengths."],
+        areasForImprovement: ["Candidate needs to engage more fully in the interview.", "Very limited responses make evaluation impossible."],
+        finalAssessment: `The candidate only spoke ${wordCount} words during the interview, which is far too little for a meaningful assessment. A tutor screening requires demonstrating communication skills, patience, and teaching ability through substantive responses. This candidate did not provide enough material to evaluate.`,
+        recommendedAction: "No Hire",
+        evidenceQuotes: [{ category: "General", quote: userSpeech, analysis: `Only ${wordCount} words were spoken. This is insufficient for any reliable assessment of teaching potential.` }],
+        createdAt: new Date().toISOString(),
+      };
+      let feedbackRef = feedbackId ? db.collection("feedback").doc(feedbackId) : db.collection("feedback").doc();
+      await feedbackRef.set(feedback);
+      console.log("createFeedback: saved low-score feedback with id", feedbackRef.id);
+      return { success: true, feedbackId: feedbackRef.id };
+    }
+
     const formattedTranscript = transcript
       .map(
         (sentence: { role: string; content: string }) =>
@@ -93,24 +153,31 @@ CATEGORIES TO EVALUATE:
    - Can they express complex ideas clearly?
    - Is their language accessible for young learners?
 
+CRITICAL CONTEXT: The candidate spoke a total of ${wordCount} words in this interview.
+
 IMPORTANT CALIBRATION RULES:
-- If the interview was very short (< 5 exchanges), note this limitation and score conservatively
+- CONVERSATION LENGTH MATTERS:
+  - If candidate spoke fewer than 50 words total: maximum totalScore is 30, recommend "No Hire"
+  - If candidate spoke 50-100 words: maximum totalScore is 50, recommend "No Hire" or "Maybe" at best
+  - If candidate spoke 100-200 words: score normally but note the limited sample size
+  - Only candidates with 200+ words can potentially score above 70
 - Do NOT give high scores just because the candidate was polite — look for SPECIFIC evidence
-- If a candidate gives generic/rehearsed answers without depth, score them in the 50-65 range
-- Only give 85+ if there are genuinely impressive, specific, thoughtful responses
+- If a candidate gives generic/rehearsed answers without depth, score them in the 30-45 range
+- Only give 85+ if there are genuinely impressive, specific, thoughtful responses with depth
 - The totalScore should be a weighted average reflecting overall impression, NOT a simple average
 - Base your assessment ONLY on what the candidate actually said — do not assume or infer
+- Short, vague, or one-word answers should be scored VERY LOW (10-25 per category)
 
 EVIDENCE REQUIREMENTS:
 - For each category, cite a SPECIFIC quote from the transcript
 - Explain exactly what that quote reveals about the candidate
-- If there's no relevant evidence for a category, state that and score conservatively (40-55)
+- If there's no relevant evidence for a category, state that and score between 10-20
 
 RECOMMENDATION CRITERIA:
-- "Strong Hire": Total 80+, no category below 70, multiple standout moments
-- "Hire": Total 65-79, no category below 55, generally positive impression
-- "Maybe": Total 50-64, mixed signals, some concerns but potential
-- "No Hire": Total below 50, or any critical category below 35, or major red flags
+- "Strong Hire": Total 80+, no category below 70, multiple standout moments, 200+ words spoken
+- "Hire": Total 65-79, no category below 55, generally positive impression, 150+ words spoken
+- "Maybe": Total 50-64, mixed signals, some concerns but potential, 100+ words spoken
+- "No Hire": Total below 50, or any critical category below 35, or major red flags, or fewer than 100 words spoken
 `,
       system:
         "You are an experienced, strict but fair Cuemath senior recruiter. You have screened 500+ tutor candidates. You know exactly what makes a great children's tutor vs a mediocre one. You never inflate scores. You always back your assessment with evidence from the actual conversation. Your evaluations are trusted by the hiring team because they are precise and honest.",
