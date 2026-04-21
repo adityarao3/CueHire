@@ -1,4 +1,9 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
@@ -151,7 +156,7 @@ const AdminDashboard = async () => {
                           ? `${fb.interview.role} — ${fb.interview.type}`
                           : "Screening Interview"}
                         {" · "}
-                        {dayjs(fb.createdAt).format("MMM D, YYYY h:mm A")}
+                        {dayjs.utc(fb.createdAt).tz("Asia/Kolkata").format("MMM D, YYYY h:mm A")} IST
                       </p>
                     </div>
 

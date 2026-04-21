@@ -1,4 +1,9 @@
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -108,7 +113,7 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
           <span>
             📅{" "}
             {feedback.createdAt
-              ? dayjs(feedback.createdAt).format("MMM D, YYYY h:mm A")
+              ? dayjs.utc(feedback.createdAt).tz("Asia/Kolkata").format("MMM D, YYYY h:mm A") + " IST"
               : "N/A"}
           </span>
         </div>
