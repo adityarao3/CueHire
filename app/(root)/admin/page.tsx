@@ -11,6 +11,8 @@ import {
   getUserById,
 } from "@/lib/actions/general.action";
 
+export const dynamic = "force-dynamic";
+
 const AdminDashboard = async () => {
   const user = await getCurrentUser();
 
