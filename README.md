@@ -60,7 +60,7 @@ Screening hundreds of tutor candidates manually is time-consuming and inconsiste
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/cuehire.git
+git clone https://github.com/adityarao3/cuehire.git
 cd cuehire
 ```
 
