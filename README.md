@@ -1,6 +1,12 @@
 # CueHire — AI-Powered Tutor Screening
 
+
 An AI voice interviewer platform that automates Cuemath tutor candidate screening. The system conducts natural voice conversations to assess communication clarity, patience, warmth, and teaching ability — then generates structured assessment reports for recruiters.
+
+
+
+admin login email->admin@cuehire.com
+password->test1234
 
 ## 🎯 Problem
 
@@ -129,6 +135,9 @@ After the interview ends, we use hard browser redirects (`window.location.href`)
 - **Multi-language Support** — Hindi/regional language interview option
 - **Custom Rubrics** — Let recruiters define their own evaluation criteria
 - **Webhook Integration** — Notify recruiters via Slack/email when assessments are ready
+
+admin login email-admin@cuehire.com
+password-test1234
 
 ## 📝 License
 
