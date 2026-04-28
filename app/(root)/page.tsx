@@ -86,11 +86,11 @@ async function Home() {
         </div>
 
         <Image
-          src="/robot.png"
-          alt="AI Interviewer"
-          width={400}
-          height={400}
-          className="max-sm:hidden"
+          src="/cuehire-logo.png"
+          alt="CueHire AI Screening Platform"
+          width={450}
+          height={450}
+          className="max-sm:hidden object-contain"
         />
       </section>
 
