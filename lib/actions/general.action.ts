@@ -324,3 +324,112 @@ export async function createScreeningInterview(userId: string) {
 
   return { interviewId: interviewRef.id, questions: [] };
 }
+
+// Admin-only: Assign a screening to a candidate by email
+export async function assignScreeningToCandidate(candidateEmail: string) {
+  // Verify admin
+  const admin = await getCurrentUser();
+  if (!admin || admin.email !== "admin@cuehire.com") {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const email = candidateEmail.trim().toLowerCase();
+  if (!email || !email.includes("@")) {
+    return { success: false, error: "Invalid email address" };
+  }
+
+  try {
+    // Find user by email in Firestore
+    const usersSnapshot = await db
+      .collection("users")
+      .where("email", "==", email)
+      .limit(1)
+      .get();
+
+    let userId = "";
+    let candidateName = "";
+
+    if (!usersSnapshot.empty) {
+      // User already registered
+      const userDoc = usersSnapshot.docs[0];
+      userId = userDoc.id;
+      candidateName = userDoc.data().name || "";
+    }
+
+    // Create the screening interview assigned to this candidate
+    const interviewRef = db.collection("interviews").doc();
+    await interviewRef.set({
+      userId,
+      candidateEmail: email,
+      candidateName,
+      role: "Cuemath Tutor",
+      type: "Screening",
+      level: "Junior",
+      techstack: ["Teaching", "Communication", "Patience"],
+      questions: [],
+      finalized: true,
+      createdAt: new Date().toISOString(),
+    });
+
+    return {
+      success: true,
+      interviewId: interviewRef.id,
+      candidateName: candidateName || email,
+      alreadyRegistered: !usersSnapshot.empty,
+    };
+  } catch (error: any) {
+    console.error("Error assigning screening:", error);
+    return { success: false, error: error?.message || "Failed to assign screening" };
+  }
+}
+
+// Get interviews assigned to a user (by userId OR email)
+export async function getAssignedInterviews(userId: string, email: string) {
+  try {
+    // Get by userId
+    const byUserId = await db
+      .collection("interviews")
+      .where("userId", "==", userId)
+      .orderBy("createdAt", "desc")
+      .get();
+
+    // Get by email (for screenings assigned before user registered)
+    // Use simple query without orderBy to avoid requiring composite index
+    let byEmail;
+    try {
+      byEmail = await db
+        .collection("interviews")
+        .where("candidateEmail", "==", email.toLowerCase())
+        .get();
+    } catch {
+      // If query fails, just use empty result
+      byEmail = { docs: [] };
+    }
+
+    // Merge and deduplicate
+    const interviewMap = new Map<string, Interview>();
+
+    byUserId.docs.forEach((doc) => {
+      interviewMap.set(doc.id, { id: doc.id, ...doc.data() } as Interview);
+    });
+
+    byEmail.docs.forEach((doc: any) => {
+      if (!interviewMap.has(doc.id)) {
+        interviewMap.set(doc.id, { id: doc.id, ...doc.data() } as Interview);
+
+        // Also update the userId on the interview so future queries work by userId
+        if (!doc.data().userId || doc.data().userId !== userId) {
+          doc.ref.update({ userId });
+        }
+      }
+    });
+
+    return Array.from(interviewMap.values()).sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  } catch (error) {
+    console.error("Error getting assigned interviews:", error);
+    return [];
+  }
+}
+

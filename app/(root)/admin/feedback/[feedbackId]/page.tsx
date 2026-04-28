@@ -8,6 +8,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import SendResultEmailBtn from "@/components/SendResultEmailBtn";
 import { getCurrentUser } from "@/lib/actions/auth.action";
 import {
   getInterviewById,
@@ -39,31 +40,31 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
     : null;
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return "text-success-100";
-    if (score >= 60) return "text-yellow-400";
-    if (score >= 40) return "text-orange-400";
-    return "text-destructive-100";
+    if (score >= 80) return "text-cue-green";
+    if (score >= 60) return "text-cue-yellow-hover";
+    if (score >= 40) return "text-orange-500";
+    return "text-cue-pink";
   };
 
   const getScoreBg = (score: number) => {
-    if (score >= 80) return "bg-success-100";
-    if (score >= 60) return "bg-yellow-400";
+    if (score >= 80) return "bg-cue-green";
+    if (score >= 60) return "bg-cue-yellow";
     if (score >= 40) return "bg-orange-400";
-    return "bg-destructive-100";
+    return "bg-cue-pink";
   };
 
   const getActionColor = (action?: string) => {
     switch (action) {
       case "Strong Hire":
-        return "bg-success-100 text-dark-100";
+        return "bg-cue-green text-white";
       case "Hire":
-        return "bg-success-100/60 text-white";
+        return "bg-cue-green/70 text-white";
       case "Maybe":
-        return "bg-yellow-500/60 text-white";
+        return "bg-cue-yellow text-cue-dark";
       case "No Hire":
-        return "bg-destructive-100/60 text-white";
+        return "bg-cue-pink text-white";
       default:
-        return "bg-dark-200 text-light-100";
+        return "bg-gray-100 text-cue-text";
     }
   };
 
@@ -73,7 +74,7 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
       <div>
         <Button className="btn-secondary" asChild>
           <Link href="/admin">
-            <p className="text-sm font-semibold text-primary-200">
+            <p className="text-sm font-semibold text-cue-dark text-center">
               ← Back to Dashboard
             </p>
           </Link>
@@ -83,7 +84,7 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3">
-          <span className="bg-destructive-100/20 text-destructive-100 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+          <span className="bg-cue-pink-light text-cue-pink text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-cue-pink/20">
             Admin Report
           </span>
           <span
@@ -97,21 +98,19 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
 
         <h1 className="text-4xl font-semibold">
           Screening Report —{" "}
-          <span className="text-primary-200">
+          <span className="text-cue-yellow-hover">
             {candidate?.name || "Unknown Candidate"}
           </span>
         </h1>
 
-        <div className="flex flex-wrap gap-5 text-sm text-light-400">
-          <span>📧 {candidate?.email || "N/A"}</span>
+        <div className="flex flex-wrap gap-5 text-sm text-cue-text-light">
+          <span>{candidate?.email || "N/A"}</span>
           <span>
-            💼{" "}
             {interview?.role
               ? `${interview.role} — ${interview.type}`
               : "Screening"}
           </span>
           <span>
-            📅{" "}
             {feedback.createdAt
               ? dayjs.utc(feedback.createdAt).tz("Asia/Kolkata").format("MMM D, YYYY h:mm A") + " IST"
               : "N/A"}
@@ -124,24 +123,24 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
         <span className={`text-6xl font-bold ${getScoreColor(feedback.totalScore)}`}>
           {feedback.totalScore}
         </span>
-        <span className="text-light-400">Overall Score /100</span>
+        <span className="text-cue-text-light">Overall Score /100</span>
       </div>
 
-      <hr />
+      <hr className="border-cue-border" />
 
       {/* Final Assessment */}
       <div>
         <h2 className="mb-3">Final Assessment</h2>
-        <p className="text-light-100 leading-relaxed">{feedback.finalAssessment}</p>
+        <p className="text-cue-text-light leading-relaxed">{feedback.finalAssessment}</p>
       </div>
 
       {/* Category Breakdown */}
       <div className="flex flex-col gap-5">
         <h2>Assessment Breakdown</h2>
         {feedback.categoryScores?.map((category, index) => (
-          <div key={index} className="bg-dark-200/50 rounded-xl p-5">
+          <div key={index} className="bg-white rounded-xl p-5 border border-cue-border shadow-sm">
             <div className="flex items-center justify-between mb-2">
-              <p className="font-bold text-lg text-white">
+              <p className="font-bold text-lg text-cue-dark">
                 {index + 1}. {category.name}
               </p>
               <span
@@ -151,13 +150,13 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
               </span>
             </div>
             {/* Score Bar */}
-            <div className="w-full bg-dark-100 rounded-full h-2 mb-3">
+            <div className="w-full bg-gray-100 rounded-full h-2 mb-3">
               <div
                 className={`h-2 rounded-full ${getScoreBg(category.score)} transition-all`}
                 style={{ width: `${category.score}%` }}
               />
             </div>
-            <p className="text-light-100 text-sm leading-relaxed">{category.comment}</p>
+            <p className="text-cue-text-light text-sm leading-relaxed">{category.comment}</p>
           </div>
         ))}
       </div>
@@ -169,15 +168,15 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
           {feedback.evidenceQuotes.map((eq, index) => (
             <div
               key={index}
-              className="bg-dark-200/30 rounded-xl p-5 border-l-4 border-primary-200"
+              className="bg-cue-yellow-light/50 rounded-xl p-5 border-l-4 border-cue-yellow"
             >
-              <p className="text-xs text-primary-200 font-bold uppercase tracking-wider mb-2">
+              <p className="text-xs text-cue-yellow-hover font-bold uppercase tracking-wider mb-2">
                 {eq.dimension}
               </p>
-              <blockquote className="text-light-100 italic border-none pl-0 mb-2">
+              <blockquote className="text-cue-text italic border-none pl-0 mb-2">
                 &ldquo;{eq.quote}&rdquo;
               </blockquote>
-              <p className="text-sm text-light-400">{eq.analysis}</p>
+              <p className="text-sm text-cue-text-light">{eq.analysis}</p>
             </div>
           ))}
         </div>
@@ -185,33 +184,47 @@ const AdminFeedbackDetail = async ({ params }: RouteParams) => {
 
       {/* Strengths */}
       <div className="flex flex-col gap-3">
-        <h3 className="text-success-100">✅ Strengths</h3>
+        <h3 className="text-cue-green">Strengths</h3>
         <ul>
           {feedback.strengths?.map((strength, index) => (
-            <li key={index} className="text-light-100">{strength}</li>
+            <li key={index} className="text-cue-text">{strength}</li>
           ))}
         </ul>
       </div>
 
       {/* Areas for Improvement */}
       <div className="flex flex-col gap-3">
-        <h3 className="text-yellow-400">⚠️ Areas for Improvement</h3>
+        <h3 className="text-cue-yellow-hover">Areas for Improvement</h3>
         <ul>
           {feedback.areasForImprovement?.map((area, index) => (
-            <li key={index} className="text-light-100">{area}</li>
+            <li key={index} className="text-cue-text">{area}</li>
           ))}
         </ul>
       </div>
 
       {/* Action Buttons */}
       <div className="buttons">
-        <Button className="btn-secondary flex-1">
+        <Button className="btn-primary flex-1" asChild>
           <Link href="/admin" className="flex w-full justify-center">
-            <p className="text-sm font-semibold text-primary-200 text-center">
+            <p className="text-sm font-semibold text-cue-dark text-center">
               Back to Dashboard
             </p>
           </Link>
         </Button>
+
+        <SendResultEmailBtn
+          feedbackId={feedback.id}
+          candidateEmail={candidate?.email || ""}
+          candidateName={candidate?.name || "Unknown"}
+          totalScore={feedback.totalScore}
+          recommendedAction={feedback.recommendedAction}
+          finalAssessment={feedback.finalAssessment}
+          categoryScores={feedback.categoryScores}
+          strengths={feedback.strengths}
+          areasForImprovement={feedback.areasForImprovement}
+          interviewRole={interview?.role}
+          alreadySent={(feedback as any).rejectionEmailSent || false}
+        />
       </div>
     </section>
   );

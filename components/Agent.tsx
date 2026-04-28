@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
-import { interviewer } from "@/constants";
 
 enum CallStatus {
   INACTIVE = "INACTIVE",
@@ -79,14 +78,35 @@ const Agent = ({
     const onCallEnd = () => {
       console.log("VAPI call-end fired");
       setCallStatus(CallStatus.FINISHED);
-      // Wait 2s for last transcripts, then redirect
-      setTimeout(() => finishCall(), 2000);
+      // Wait 4s for last transcripts from external assistant, then redirect
+      setTimeout(() => finishCall(), 4000);
     };
 
     const onMessage = (message: Message) => {
+      // Capture individual transcript messages (inline assistant style)
       if (message.type === "transcript" && message.transcriptType === "final") {
         const newMessage = { role: message.role, content: message.transcript };
         setMessages((prev) => [...prev, newMessage]);
+      }
+
+      // Capture conversation-update messages (external assistant style)
+      // These contain the full conversation history from the assistant
+      if (message.type === "conversation-update" && message.conversation) {
+        const conversation = message.conversation as Array<{
+          role: string;
+          content: string;
+        }>;
+        // Replace messages with the full conversation from VAPI
+        const mapped = conversation
+          .filter((m: any) => m.role === "user" || m.role === "assistant")
+          .map((m: any) => ({
+            role: m.role as "user" | "assistant",
+            content: typeof m.content === "string" ? m.content : (m.content?.[0]?.text || m.content?.[0]?.content || ""),
+          }))
+          .filter((m: any) => m.content && m.content.trim().length > 0);
+        if (mapped.length > 0) {
+          setMessages(mapped);
+        }
       }
     };
 
@@ -130,9 +150,11 @@ const Agent = ({
           .join("\n");
       }
 
-      await vapi.start(interviewer, {
+      await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
         variableValues: {
           questions: formattedQuestions,
+          username: userName,
+          userid: userId,
         },
       });
     }

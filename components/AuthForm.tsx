@@ -32,6 +32,7 @@ const authFormSchema = (type: FormType) => {
 const AuthForm = ({ type }: { type: FormType }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const formSchema = authFormSchema(type);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -90,6 +91,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
         });
 
         toast.success("Signed in successfully.");
+        setIsNavigating(true);
         router.push("/");
       }
     } catch (error) {
@@ -103,11 +105,27 @@ const AuthForm = ({ type }: { type: FormType }) => {
   const isSignIn = type === "sign-in";
 
   return (
+    <>
+      {/* Full-page loading overlay during navigation */}
+      {isNavigating && (
+        <div className="fixed inset-0 bg-white/80 backdrop-blur-sm z-[300] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative">
+              <div className="w-14 h-14 border-4 border-cue-yellow/20 rounded-full" />
+              <div className="absolute inset-0 w-14 h-14 border-4 border-cue-yellow border-t-transparent rounded-full animate-spin" />
+            </div>
+            <p className="text-sm font-medium text-cue-text-light animate-pulse">
+              Loading your dashboard...
+            </p>
+          </div>
+        </div>
+      )}
+
     <div className="card-border lg:min-w-[566px]">
       <div className="flex flex-col gap-6 card py-14 px-10">
         <div className="flex flex-row gap-2 justify-center">
           <Image src="/logo.svg" alt="logo" height={32} width={38} />
-          <h2 className="text-primary-100">CueHire</h2>
+          <h2 className="text-cue-yellow-hover">CueHire</h2>
         </div>
 
         <h3 className="text-center">AI-Powered Tutor Screening</h3>
@@ -160,13 +178,14 @@ const AuthForm = ({ type }: { type: FormType }) => {
           {isSignIn ? "No account yet?" : "Have an account already?"}
           <Link
             href={!isSignIn ? "/sign-in" : "/sign-up"}
-            className="font-bold text-user-primary ml-1"
+            className="font-bold text-cue-yellow-hover ml-1"
           >
             {!isSignIn ? "Sign In" : "Sign Up"}
           </Link>
         </p>
       </div>
     </div>
+    </>
   );
 };
 
